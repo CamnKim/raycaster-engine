@@ -2,7 +2,7 @@ import { compileShader, createProgram, webGLInit } from './utils/webgl/utils';
 import vertexShaderSource from './shaders/pointVert.glsl?raw';
 import fragmentShaderSource from './shaders/fragmentShader.glsl?raw';
 import map, { mapHeight, mapWidth } from './constants/map';
-import { WebGLContext } from './types/types';
+import { Color, WebGLContext } from './types/types';
 import drawQuad from './utils/webgl/drawQuad';
 import drawLine from './utils/webgl/drawLine';
 import drawPoint from './utils/webgl/drawPoint';
@@ -31,13 +31,13 @@ const drawPlayer = (
   glContext: WebGLContext,
   player: Player,
 ) => {
-  drawPoint(glContext, player.px, player.py, [1, 0, 0]);
+  drawPoint(glContext, player.x, player.y, [1, 0, 0]);
 
-  const lineSize = 3;
+  const lineSize = 25;
   drawLine(
     glContext,
-    [player.px, player.py],
-    [player.px + player.pdx * lineSize, player.py + player.pdy * lineSize],
+    [player.x, player.y],
+    [player.x + player.dirX * lineSize, player.y + player.dirY * lineSize],
     [1, 0, 0],
   );
 };
@@ -47,7 +47,7 @@ const drawMap = (
 ) => {
   for (let y = 0; y < mapHeight; y++) {
     for (let x = 0; x < mapWidth; x++) {
-      if (map[y * mapWidth + x] === 1) {
+      if (map[y * mapWidth + x] > 0) {
         const xo = x * TILE_SIZE;
         const yo = y * TILE_SIZE;
         drawQuad(
@@ -63,21 +63,28 @@ const drawMap = (
   }
 };
 
-export const miniMap = (player: Player, handleMovement: (dir: 'left' | 'right' | 'up' | 'down') => void) => {
+export const miniMap = (
+  player: Player,
+  drawRect: (
+    sectorIndex: number,
+    height: number,
+    color: Color,
+  ) => void,
+  numSectors: number,
+) => {
   const { gl, program } = setup();
-
   const handleMove = (e: KeyboardEvent) => {
-    if (e.code === Controls.Left && player.px > 0) {
-      handleMovement('left');
+    if (e.code === Controls.Left && player.x > 0) {
+      player.movePlayer('left');
     }
-    if (e.code === Controls.Right && player.px < gl.canvas.width) {
-      handleMovement('right');
+    if (e.code === Controls.Right && player.x < gl.canvas.width) {
+      player.movePlayer('right');
     }
-    if (e.code === Controls.Up && player.py < gl.canvas.height) {
-      handleMovement('up');
+    if (e.code === Controls.Up && player.y < gl.canvas.height) {
+      player.movePlayer('up');
     }
-    if (e.code === Controls.Down && player.py > 0) {
-      handleMovement('down');
+    if (e.code === Controls.Down && player.y > 0) {
+      player.movePlayer('down');
     }
   };
 
@@ -90,7 +97,7 @@ export const miniMap = (player: Player, handleMovement: (dir: 'left' | 'right' |
 
   const positionBuffer = gl.createBuffer();
   const glContext = { gl, program, arrayBuffer: positionBuffer };
-  castRays(glContext, player);
   drawPlayer(glContext, player);
   drawMap(glContext);
+  castRays(glContext, player, drawRect, numSectors);
 };

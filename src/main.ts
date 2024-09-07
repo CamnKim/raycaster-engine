@@ -5,7 +5,6 @@ import fragmentShaderSource from './shaders/fragmentShader.glsl?raw';
 import { Color, WebGLContext } from './types/types';
 import { miniMap } from './minimap';
 import Player from './types/Player';
-import castRays from './utils/webgl/castRay';
 
 const canvas = document.querySelector('#view');
 
@@ -29,16 +28,15 @@ const setup = () => {
 };
 
 const drawRect = (
-  gl: WebGLRenderingContext,
-  program: WebGLProgram,
-  arrayBuffer: WebGLBuffer | null,
+  glContext: WebGLContext,
   sectorIndex: number,
   height: number,
   color: Color,
 ) => {
-  const yOffset = (screenHeight - (height * screenHeight)) / 2;
+  const { gl, arrayBuffer, program } = glContext;
+  const yOffset = (screenHeight - (height)) / 2;
   const x1 = sectorIndex * screenSectorSize;
-  const y1 = height * screenHeight + yOffset;
+  const y1 = height + yOffset;
   const x2 = (sectorIndex + 1) * screenSectorSize;
   const y2 = yOffset;
 
@@ -79,7 +77,7 @@ const drawRect = (
   gl.drawArrays(gl.TRIANGLES, 0, 6);
 };
 
-const numSectors = screenWidth / screenSectorSize;
+// console.log({ numSectors });
 
 const main = () => {
   // Setup
@@ -94,52 +92,25 @@ const main = () => {
   const player = new Player(200, 200);
 
   const glContext: WebGLContext = { gl, program, arrayBuffer: positionBuffer };
-
-  const movePlayer = (dir: 'left' | 'right' | 'up' | 'down') => {
-    const turnSpeed = 0.2;
-    if (dir === 'left') {
-      player.pa -= turnSpeed;
-      if (player.pa < 0) {
-        player.pa = 2 * Math.PI;
-      }
-
-      player.pdx = Math.sin(player.pa) * player.getSpeed();
-      player.pdy = Math.cos(player.pa) * player.getSpeed();
-    }
-    if (dir === 'right') {
-      player.pa += turnSpeed;
-      if (player.pa > 2 * Math.PI) {
-        player.pa = 0;
-      }
-
-      player.pdx = Math.sin(player.pa) * player.getSpeed();
-      player.pdy = Math.cos(player.pa) * player.getSpeed();
-    }
-    if (dir === 'up') {
-      player.px += player.pdx;
-      player.py += player.pdy;
-    }
-    if (dir === 'down') {
-      player.px -= player.pdx;
-      player.py -= player.pdy;
-    }
-  };
+  const numSectors = screenWidth / screenSectorSize;
 
   // Render Loop
-  const hinc = screenHeight / numSectors;
-  // eslint-disable-next-line no-plusplus
-  for (let i = 0; i < numSectors; ++i) {
-    drawRect(gl, program, positionBuffer, i, (i * hinc) / screenHeight, { r: 1, g: 0, b: 0 });
-  }
-
-  // init delta pos
-
   const loop = () => {
-    miniMap(player, movePlayer);
+    miniMap(player, (
+      sectorIndex: number,
+      height: number,
+      color: Color,
+    ) => drawRect(glContext, sectorIndex, height, color), numSectors);
     requestAnimationFrame(loop);
   };
 
   requestAnimationFrame(loop);
+
+  // miniMap(player, (
+  //   sectorIndex: number,
+  //   height: number,
+  //   color: Color,
+  // ) => drawRect(glContext, sectorIndex, height, color));
 };
 
 main();
