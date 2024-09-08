@@ -9,6 +9,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Setup
+        run: npm i
+
       - name: Build
         run: npm run build
 
