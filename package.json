@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "tsc && vite build && gh-pages -d dist"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",
@@ -15,6 +16,7 @@
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-plugin-import": "^2.29.1",
+    "gh-pages": "^6.3.0",
     "typescript": "^5.5.3",
     "vite": "^5.4.1"
   },
